@@ -1,4 +1,4 @@
-const CONFIG = window.CONFIG;
+// CONFIG wird bereits global über config.js geladen und steht direkt zur Verfügung
 
 // Globaler Zustand der App
 let state = {
