@@ -1,4 +1,4 @@
-// CONFIG wird bereits global über config.js geladen und steht direkt zur Verfügung
+const CONFIG = window.CONFIG;
 
 // Globaler Zustand der App
 let state = {
@@ -15,7 +15,8 @@ let state = {
     custom_feedback: '',
     summary: ''
   },
-  supabase: null
+  supabase: null,
+  currentSelectedValues: new Set() // Speichert aktuell ausgewählte Chips für den aktiven Schritt
 };
 
 // ==========================================================================
@@ -36,63 +37,153 @@ function initSupabase() {
 }
 
 // ==========================================================================
-// CHATBOT FRAGEN-DEFINITIONEN
+// CHATBOT FRAGEN-DEFINITIONEN (MASSIV ERWEITERT)
 // ==========================================================================
 const QUESTIONS = [
   {
     // Schritt 0
     text: `Hi! Schön, dass du da bist. 😊 Wir wollen unsere Essens- und Einkaufsplanung ab jetzt komplett automatisieren, damit wir sonntags immer direkt coole Vorschläge bekommen und unter der Woche weniger Stress haben.<br><br>Ein paar Eckdaten (wie deine geliebten Nudeln mit Tomatensoße oder dass Lachs für dich ausfällt) habe ich schon eingespeichert.<br><br>Ich würde dir gerne ein paar kurze Fragen stellen, um das Ganze perfekt zu machen. Bereit?<br><br><strong>Frage 1: Was isst du neben Pasta noch richtig gerne? (z.B. Aufläufe, Suppen, Pfannengerichte...)</strong>`,
     type: 'multi-select',
-    chips: ['Aufläufe 🍲', 'Suppen & Eintöpfe 🥣', 'Ofengemüse 🥦', 'Pfannengerichte 🍳', 'Salate 🥗', 'Kartoffelgerichte 🥔'],
+    chips: [
+      'Aufläufe & Gratins 🍲', 
+      'Suppen & Eintöpfe 🥣', 
+      'Ofengemüse 🥦', 
+      'Pfannengerichte 🍳', 
+      'Salate & Rohkost 🥗', 
+      'Kartoffelgerichte 🥔', 
+      'Reis- & Wok-Gerichte 🍛',
+      'Bowls & Buddha Bowls 🥗',
+      'Wraps, Tacos & Burritos 🫓',
+      'Risotto 🍚',
+      'Burger & Pommes 🍔',
+      'Quiche, Tarte & Pizza 🍕',
+      'Süße Hauptspeisen (Milchreis/Pancakes) 🥞'
+    ],
     field: 'favorite_dishes'
   },
   {
     // Schritt 1
-    text: `Super, ist notiert! 📝<br><br><strong>Frage 2a: Wie sieht es beim Gemüse aus? Was liebst du total?</strong> (Wähle deine Favoriten aus und klicke auf Weiter)`,
+    text: `Super, ist notiert! 📝<br><br><strong>Frage 2a: Wie sieht es beim Gemüse aus? Was liebst du total?</strong> (Wähle deine Favoriten aus oder tippe eigene ein und klicke danach auf Weiter)`,
     type: 'multi-select-next',
-    chips: ['Tomaten 🍅', 'Zucchini 🥒', 'Brokkoli 🥦', 'Paprika 🫑', 'Karotten 🥕', 'Spinat 🍃', 'Avocado 🥑', 'Blumenkohl 🥦'],
+    chips: [
+      'Tomaten 🍅', 
+      'Zucchini 🥒', 
+      'Brokkoli 🥦', 
+      'Paprika 🫑', 
+      'Karotten 🥕', 
+      'Spinat 🍃', 
+      'Avocado 🥑', 
+      'Blumenkohl 🥦',
+      'Erbsen & Bohnen 🫛',
+      'Pilze (Champignons etc.) 🍄',
+      'Kürbis 🎃',
+      'Süßkartoffeln 🍠',
+      'Mais 🌽',
+      'Gurken 🥒',
+      'Spargel 🎋',
+      'Rote Bete 🍠',
+      'Auberginen 🍆',
+      'Knoblauch & Zwiebeln 🧄'
+    ],
     field: 'vegetables_love'
   },
   {
     // Schritt 2
-    text: `Alles klar. 🌱<br><br><strong>Frage 2b: Und welches Gemüse sollte ich auf gar keinen Fall auf den Plan setzen? ❌</strong> (Wähle deine No-Gos aus und klicke auf Weiter)`,
+    text: `Alles klar. 🌱<br><br><strong>Frage 2b: Und welches Gemüse sollte ich auf gar keinen Fall auf den Plan setzen? ❌</strong> (Wähle deine No-Gos aus oder tippe eigene ein und klicke danach auf Weiter)`,
     type: 'multi-select-next',
-    chips: ['Rosenkohl 🥬', 'Pilze 🍄', 'Sellerie 🌿', 'Fenchel 🧅', 'Auberginen 🍆', 'Oliven 🫒', 'Keines / Ich mag alles! 👍'],
+    chips: [
+      'Rosenkohl 🥬', 
+      'Pilze 🍄', 
+      'Sellerie 🌿', 
+      'Fenchel 🧅', 
+      'Auberginen 🍆', 
+      'Oliven 🫒', 
+      'Rote Bete 🍠',
+      'Koriander 🌿',
+      'Spargel 🎋',
+      'Ingwer 🫚',
+      'Zucchini 🥒',
+      'Kürbis 🎃',
+      'Keines / Ich mag alles! 👍'
+    ],
     field: 'vegetables_hate'
   },
   {
     // Schritt 3
     text: `Nudeln und Kartoffeln haben wir ja schon auf dem Schirm. 🥔🍝<br><br><strong>Frage 3: Wie sieht es mit anderen Beilagen aus? Worauf hast du da Lust?</strong>`,
     type: 'multi-select',
-    chips: ['Reis-Gerichte 🌾', 'Couscous & Bulgur 🥣', 'Süßkartoffeln 🍠', 'Wraps / Tortillas 🫓', 'Eher Low-Carb (mehr Salat/Gemüse) 🥗'],
+    chips: [
+      'Reis-Gerichte 🌾', 
+      'Couscous & Bulgur 🥣', 
+      'Süßkartoffeln 🍠', 
+      'Wraps / Tortillas 🫓', 
+      'Eher Low-Carb (mehr Salat/Gemüse) 🥗',
+      'Nudeln, Gnocchi & Schupfnudeln 🍝',
+      'Kartoffeln & Püree 🥔',
+      'Quinoa, Hirse & Dinkel 🌾',
+      'Polenta 🌽',
+      'Brot & Baguette 🥖'
+    ],
     field: 'carbs_preferences'
   },
   {
     // Schritt 4
-    text: `Da wir tendenziell eher weniger Fleisch essen wollen: 🌱<br><br><strong>Frage 4: Wenn es doch mal Fleisch gibt, was ist dir da am liebsten?</strong>`,
+    text: `Da wir tendenziell eher weniger Fleisch essen wollen: 🌱<br><br><strong>Frage 4: Wenn es doch mal Fleisch gibt, was ist dir da am liebsten?</strong> (Einfachauswahl oder tippe etwas Eigenes ein)`,
     type: 'single-select',
-    chips: ['Eher Geflügel (Hähnchen/Pute) 🍗', 'Rinderhackfleisch 🥩', 'Komplett vegetarisch (kein Fleisch) 🌱', 'Ganz was anderes (siehe Text)']
-    // Freitext geht auch, Feld wird in app.js gehandhabt
+    chips: [
+      'Eher Geflügel (Hähnchen/Pute) 🍗', 
+      'Rinderhackfleisch 🥩', 
+      'Komplett vegetarisch (kein Fleisch) 🌱', 
+      'Rindersteak / Gulasch 🥩',
+      'Schweinefleisch (z.B. Schinken/Speck) 🥓',
+      'Vegan (rein pflanzlich) 🥦',
+      'Fisch / Meeresfrüchte (nur für Sohn/Freund) 🐟'
+    ]
   },
   {
     // Schritt 5
     text: `Perfekt. 🗺️<br><br><strong>Frage 5: Wenn du an deine Lieblingsgerichte denkst: In welche Länderküche zieht es dich am häufigsten?</strong>`,
     type: 'multi-select',
-    chips: ['Italienisch (Pizza/Pasta) 🇮🇹', 'Asiatisch (Currys/Wok) 🥢', 'Mexikanisch (Tacos/Wraps) 🇲🇽', 'Griechisch / Mediterran 🇬🇷', 'Hausmannskost 🇩🇪', 'Egal, Hauptsache lecker! 😋'],
+    chips: [
+      'Italienisch (Pizza/Pasta) 🇮🇹', 
+      'Asiatisch (Currys/Wok) 🥢', 
+      'Mexikanisch (Tacos/Wraps) 🇲🇽', 
+      'Griechisch / Mediterran 🇬🇷', 
+      'Deutsche Hausmannskost 🇩🇪', 
+      'Indisch (Naan/Curry) 🇮🇳',
+      'Nahöstlich / Orientalisch (Hummus/Falafel) 🫓',
+      'Amerikanisch (Burger/BBQ) 🇺🇸',
+      'Spanisch (Tapas) 🇪🇸',
+      'Egal, Hauptsache abwechslungsreich! 😋'
+    ],
     field: 'cuisine_preferences'
   },
   {
     // Schritt 6
     text: `Fast geschafft! 🚀<br><br><strong>Frage 6: Sollen wir uns sonntags nur Ideen für das warme Mittag-/Abendessen holen, oder hättest du auch gerne mal Inspiration für ein gesundes Frühstück oder ein paar schnelle Snacks?</strong>`,
     type: 'multi-select',
-    chips: ['Nur warmes Mittag-/Abendessen 🍽️', 'Auch gesundes Frühstück 🥞', 'Schnelle Snacks für zwischendurch 🍎'],
+    chips: [
+      'Nur warmes Mittag-/Abendessen 🍽️', 
+      'Auch gesundes Frühstück 🥞', 
+      'Schnelle Snacks für zwischendurch 🍎',
+      'Meal-Prep Ideen (zum Einfrieren) ❄️',
+      'Kuchen & Backrezepte 🍰',
+      'Getränke & gesunde Smoothies 🍹'
+    ],
     field: 'meal_types'
   },
   {
     // Schritt 7
     text: `Und die letzte Frage: 🤔<br><br><strong>Frage 7: Bist du morgens und zwischendurch eher Team Süß (z.B. Müsli, Porridge, Obst) oder Team Herzhaft (z.B. Avocado-Toast, Rührei, Hummus)?</strong>`,
     type: 'single-select',
-    chips: ['Absolut Team Süß 🥞', 'Lieber herzhaft 🧀', 'Bunte Mischung aus beidem 🍉', 'Kein Frühstück/Snacks ☕']
+    chips: [
+      'Absolut Team Süß 🥞', 
+      'Lieber herzhaft 🧀', 
+      'Bunte Mischung aus beidem 🍉', 
+      'Gerne ausgiebig am Wochenende 🍳',
+      'Hauptsache schnell & unkompliziert ⚡',
+      'Kein Frühstück/Snacks ☕'
+    ]
   }
 ];
 
@@ -126,6 +217,7 @@ function startChatbot() {
   setTimeout(() => {
     removeBotTypingIndicator();
     addBotMessage(QUESTIONS[0].text);
+    state.currentSelectedValues.clear();
     renderChips(QUESTIONS[0]);
   }, 1200);
 }
@@ -197,12 +289,15 @@ function renderChips(question) {
   
   if (!question.chips || question.chips.length === 0) return;
   
-  const selectedValues = new Set();
-  
   question.chips.forEach(chipText => {
     const chip = document.createElement('button');
     chip.className = 'chip';
     chip.textContent = chipText;
+    
+    // Markiere als ausgewählt, wenn im Set vorhanden (z. B. nach dynamischem Freitext-Hinzufügen)
+    if (state.currentSelectedValues.has(chipText)) {
+      chip.classList.add('selected');
+    }
     
     chip.addEventListener('click', () => {
       if (question.type === 'single-select') {
@@ -211,12 +306,12 @@ function renderChips(question) {
         saveAnswer(question, chipText);
         nextStep();
       } else {
-        // Mehrfachauswahl: Markieren / Entmarkieren
-        if (selectedValues.has(chipText)) {
-          selectedValues.delete(chipText);
+        // Mehrfachauswahl: Markieren / Entmarkieren im globalen Set
+        if (state.currentSelectedValues.has(chipText)) {
+          state.currentSelectedValues.delete(chipText);
           chip.classList.remove('selected');
         } else {
-          selectedValues.add(chipText);
+          state.currentSelectedValues.add(chipText);
           chip.classList.add('selected');
         }
       }
@@ -234,13 +329,15 @@ function renderChips(question) {
     nextBtn.innerHTML = 'Weiter <i data-lucide="arrow-right" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-left:4px;"></i>';
     
     nextBtn.addEventListener('click', () => {
-      const selectedArray = Array.from(selectedValues);
+      const selectedArray = Array.from(state.currentSelectedValues);
       if (selectedArray.length === 0) {
         addUserMessage("Keine Angabe / Weiter");
         saveAnswer(question, []);
       } else {
-        addUserMessage(selectedArray.join(', '));
-        saveAnswer(question, selectedArray);
+        // Emojis und das Tipp-Zeichen (✍️) für die finale Anzeige bereinigen
+        const cleanArray = selectedArray.map(item => item.replace(' ✍️', ''));
+        addUserMessage(cleanArray.join(', '));
+        saveAnswer(question, cleanArray);
       }
       nextStep();
     });
@@ -252,8 +349,6 @@ function renderChips(question) {
 
 // Speichert die Antwort im globalen Zustand
 function saveAnswer(question, value) {
-  const currentQ = QUESTIONS[state.currentStep];
-  
   if (state.currentStep === 0) {
     state.answers.favorite_dishes = Array.isArray(value) ? value : [value];
   } else if (state.currentStep === 1) {
@@ -277,9 +372,10 @@ function saveAnswer(question, value) {
 function nextStep() {
   state.currentStep++;
   
-  // Eingabefeld leeren
+  // Eingabefeld leeren und Zustand zurücksetzen
   chatInput.value = '';
   quickRepliesContainer.innerHTML = '';
+  state.currentSelectedValues.clear();
   
   if (state.currentStep < QUESTIONS.length) {
     addBotTypingIndicator();
@@ -300,13 +396,27 @@ function handleUserInput() {
   const text = chatInput.value.trim();
   if (!text) return;
   
-  addUserMessage(text);
-  
-  // Antwort speichern
   const question = QUESTIONS[state.currentStep];
-  saveAnswer(question, text);
   
-  nextStep();
+  if (question.type === 'multi-select' || question.type === 'multi-select-next') {
+    // Mehrfachauswahl: Eigener Freitext wird als ausgewählter Chip hinzugefügt
+    const customChipText = text + " ✍️";
+    
+    if (!question.chips.includes(customChipText)) {
+      question.chips.push(customChipText);
+    }
+    
+    state.currentSelectedValues.add(customChipText);
+    chatInput.value = '';
+    
+    // Chips neu rendern, damit der neue Freitext-Chip sichtbar und ausgewählt ist
+    renderChips(question);
+  } else {
+    // Einfachauswahl: Verhalten wie bisher (direkt weitergehen)
+    addUserMessage(text);
+    saveAnswer(question, text);
+    nextStep();
+  }
 }
 
 sendBtn.addEventListener('click', handleUserInput);
@@ -433,13 +543,13 @@ async function saveToSupabase() {
       ]);
       
     if (error) {
-      console.error("Supabase Save Error:", error);
+      console.log("Supabase Save Error:", error);
       return false;
     }
     
     return true;
   } catch (e) {
-    console.error("Fehler beim Speichern in Supabase:", e);
+    console.log("Fehler beim Speichern in Supabase:", e);
     return false;
   }
 }
