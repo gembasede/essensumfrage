@@ -1,0 +1,743 @@
+/* ==========================================================================
+   ESSENSPLANER CHATBOT - PREMIUM DESIGN SYSTEM
+   ========================================================================== */
+
+/* Design Tokens & Variablen */
+:root {
+  --font-primary: 'Outfit', sans-serif;
+  --font-secondary: 'Plus Jakarta Sans', sans-serif;
+
+  /* Farbpalette (Warmes Food/Genuss-Theme) */
+  --bg-app: hsl(30, 24%, 96%);
+  --bg-card: hsl(0, 0%, 100%);
+  --text-main: hsl(28, 25%, 12%);
+  --text-muted: hsl(28, 12%, 45%);
+  --border-light: hsl(28, 15%, 88%);
+  
+  --primary: hsl(14, 85%, 57%); /* Terracotta / Warm Orange */
+  --primary-hover: hsl(14, 85%, 50%);
+  --primary-light: hsl(14, 85%, 95%);
+  
+  --secondary: hsl(142, 24%, 40%); /* Salbeigrün */
+  --secondary-hover: hsl(142, 24%, 32%);
+  --secondary-light: hsl(142, 24%, 93%);
+
+  --bot-bubble-bg: hsl(0, 0%, 100%);
+  --bot-bubble-text: hsl(28, 25%, 12%);
+  
+  --user-bubble-bg: hsl(14, 85%, 57%);
+  --user-bubble-text: hsl(0, 0%, 100%);
+
+  --shadow-sm: 0 2px 8px rgba(28, 12, 4, 0.04);
+  --shadow-md: 0 8px 24px rgba(28, 12, 4, 0.06);
+  --shadow-lg: 0 16px 40px rgba(28, 12, 4, 0.1);
+  
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-bubble: 20px;
+  
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Mode optional vorbereitet */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-app: hsl(28, 15%, 10%);
+    --bg-card: hsl(28, 15%, 14%);
+    --text-main: hsl(30, 20%, 94%);
+    --text-muted: hsl(28, 10%, 70%);
+    --border-light: hsl(28, 12%, 22%);
+    
+    --primary: hsl(14, 85%, 62%);
+    --primary-hover: hsl(14, 85%, 55%);
+    --primary-light: hsl(14, 30%, 20%);
+    
+    --bot-bubble-bg: hsl(28, 12%, 18%);
+    --bot-bubble-text: hsl(30, 20%, 94%);
+    
+    --user-bubble-bg: hsl(14, 85%, 62%);
+    --user-bubble-text: hsl(28, 15%, 10%);
+    
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Reset & Basis-Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-secondary);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  height: 100vh;
+  height: -webkit-fill-available;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+html {
+  height: -webkit-fill-available;
+}
+
+/* Hilfsklassen */
+.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   APP-GERÜST (CHAT & ADMIN)
+   ========================================================================== */
+.app-container {
+  width: 100%;
+  max-width: 500px; /* Perfekte Breite für ein Smartphone am Desktop */
+  height: 100%;
+  max-height: 100vh;
+  background-color: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .app-container {
+    height: 90vh;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    overflow: hidden;
+  }
+}
+
+/* App Header */
+.app-header {
+  padding: 16px 20px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bot-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.bot-avatar i {
+  width: 24px;
+  height: 24px;
+}
+
+.online-indicator {
+  width: 10px;
+  height: 10px;
+  background-color: #22c55e;
+  border: 2px solid var(--bg-card);
+  border-radius: 50%;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  animation: pulse 2s infinite;
+}
+
+.header-info h1 {
+  font-family: var(--font-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.status-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   CHAT MESSAGES AREA
+   ========================================================================== */
+.chat-messages-area {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Chat-Blasen (Bubbles) */
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.message.bot {
+  align-self: flex-start;
+}
+
+.message.user {
+  align-self: flex-end;
+}
+
+.bubble {
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.message.bot .bubble {
+  background-color: var(--bot-bubble-bg);
+  color: var(--bot-bubble-text);
+  border-radius: 0 var(--radius-bubble) var(--radius-bubble) var(--radius-bubble);
+  border: 1px solid var(--border-light);
+}
+
+.message.user .bubble {
+  background-color: var(--user-bubble-bg);
+  color: var(--user-bubble-text);
+  border-radius: var(--radius-bubble) 0 var(--radius-bubble) var(--radius-bubble);
+}
+
+.message-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  align-self: flex-end;
+}
+
+.message.user .message-time {
+  color: hsla(0, 0%, 100%, 0.7);
+}
+
+/* Lade-Indikator (Bot schreibt...) */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 10px 14px;
+  align-items: center;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background-color: var(--text-muted);
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+/* ==========================================================================
+   QUICK REPLIES / CHIPS
+   ========================================================================== */
+.quick-replies-area {
+  padding: 12px 20px;
+  background-color: transparent;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.chip {
+  padding: 8px 14px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-secondary);
+  font-size: 0.85rem;
+  color: var(--text-main);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.chip:hover {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.chip.selected {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--user-bubble-text);
+  box-shadow: 0 4px 12px hsla(14, 85%, 57%, 0.3);
+}
+
+/* Gemüse-Spezialselektor */
+.veg-selector-card {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-top: 8px;
+  box-shadow: var(--shadow-md);
+}
+
+.veg-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.veg-section-title.love { color: var(--secondary); }
+.veg-section-title.hate { color: var(--primary); }
+
+.veg-chips-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.veg-chip {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  background: var(--bg-app);
+  transition: var(--transition-smooth);
+}
+
+.veg-chip.love-selected {
+  background: var(--secondary);
+  color: white;
+  border-color: var(--secondary);
+}
+
+.veg-chip.hate-selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.submit-veg-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  font-size: 0.85rem;
+}
+
+.submit-veg-btn:hover {
+  background: var(--secondary-hover);
+}
+
+/* ==========================================================================
+   EINGABE-BEREICH
+   ========================================================================== */
+.chat-input-area {
+  padding: 16px 20px;
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border-light);
+  z-index: 10;
+}
+
+.input-wrapper {
+  display: flex;
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-bubble);
+  padding: 4px 4px 4px 16px;
+  align-items: center;
+  transition: var(--transition-smooth);
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+  background-color: var(--bg-card);
+}
+
+#chat-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-secondary);
+  font-size: 0.95rem;
+  color: var(--text-main);
+  padding: 8px 0;
+}
+
+.send-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: var(--transition-smooth);
+  flex-shrink: 0;
+}
+
+.send-button:hover {
+  background-color: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+.send-button i {
+  width: 18px;
+  height: 18px;
+}
+
+/* Zusammenfassungs-Card im Chat */
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin: 10px 0;
+  box-shadow: var(--shadow-md);
+}
+
+.summary-card h3 {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary-light);
+  padding-bottom: 6px;
+}
+
+.summary-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.summary-card li {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.summary-card strong {
+  color: var(--text-muted);
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.action-buttons-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  transition: var(--transition-smooth);
+}
+
+.action-btn.whatsapp {
+  background-color: #25d366;
+  color: white;
+}
+
+.action-btn.whatsapp:hover {
+  background-color: #20ba5a;
+}
+
+.action-btn.copy {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+}
+
+.action-btn.copy:hover {
+  background-color: var(--border-light);
+}
+
+/* ==========================================================================
+   ADMIN DASHBOARD SECTION
+   ========================================================================== */
+#admin-container {
+  max-width: 1000px; /* Das Admin-Dashboard darf breiter sein */
+  background: var(--bg-card);
+}
+
+@media (min-width: 1024px) {
+  #admin-container {
+    height: 85vh;
+  }
+}
+
+.admin-header {
+  border-bottom: 2px solid var(--primary-light);
+}
+
+.admin-login-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--bg-app);
+}
+
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.lock-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+.glass-card h2 {
+  font-family: var(--font-primary);
+  margin-bottom: 8px;
+  font-size: 1.4rem;
+}
+
+.glass-card p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.login-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-input-row input {
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  outline: none;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.login-input-row input:focus {
+  border-color: var(--primary);
+}
+
+.primary-btn {
+  padding: 12px 20px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.primary-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.secondary-btn {
+  padding: 8px 14px;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  transition: var(--transition-smooth);
+}
+
+.secondary-btn:hover {
+  background-color: var(--border-light);
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+
+/* Admin Data Box */
+.admin-data-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow: hidden;
+  background-color: var(--bg-app);
+}
+
+.data-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+  min-width: 800px;
+}
+
+th, td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+th {
+  background-color: var(--bg-app);
+  font-weight: 700;
+  color: var(--text-muted);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+tbody tr:hover {
+  background-color: hsla(28, 15%, 88%, 0.15);
+}
+
+.table-summary {
+  max-width: 250px;
+  white-space: pre-wrap;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.delete-btn {
+  padding: 6px 10px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.delete-btn:hover {
+  background-color: #dc2626;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state i {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+/* ==========================================================================
+   ANIMATIONEN
+   ========================================================================== */
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1.0); }
+}
+
+@keyframes slideUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Interaktiver Essensplaner-Chatbot zur Abfrage von Essensvorlieben für eine automatisierte Einkaufsplanung.">
+  <title>Essensplaner & Einkaufs-Assistent 🍳</title>
+  
+  <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Supabase JS Client SDK CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- CHAT BOT CONTAINER -->
+  <main id="chat-container" class="app-container">
+    <header class="app-header">
+      <div class="header-status">
+        <div class="bot-avatar">
+          <i data-lucide="chef-hat"></i>
+          <span class="online-indicator"></span>
+        </div>
+        <div class="header-info">
+          <h1>Essens-Planer 🤖</h1>
+          <p class="status-text">Haushalts-Assistent</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Chat Verlauf -->
+    <section id="chat-messages" class="chat-messages-area">
+      <!-- Nachrichten werden dynamisch von JS eingefügt -->
+    </section>
+
+    <!-- Bereich für interaktive Schnellantwort-Chips -->
+    <section id="quick-replies-container" class="quick-replies-area">
+      <!-- Chips werden dynamisch gerendert -->
+    </section>
+
+    <!-- Eingabebereich -->
+    <footer class="chat-input-area">
+      <div class="input-wrapper">
+        <input 
+          type="text" 
+          id="chat-input" 
+          placeholder="Schreibe eine Nachricht..." 
+          autocomplete="off"
+          aria-label="Nachricht an den Bot"
+        >
+        <button id="send-btn" class="send-button" aria-label="Senden">
+          <i data-lucide="send"></i>
+        </button>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ADMIN DASHBOARD CONTAINER (Wird über Parameter ?admin=true gesteuert) -->
+  <main id="admin-container" class="app-container hidden">
+    <header class="app-header admin-header">
+      <div class="header-info">
+        <h1>Admin-Dashboard 📊</h1>
+        <p class="status-text">Gespeicherte Essensvorlieben</p>
+      </div>
+      <button id="logout-btn" class="secondary-btn">
+        <i data-lucide="log-out"></i> Beenden
+      </button>
+    </header>
+
+    <!-- Login-Bereich -->
+    <section id="admin-login-box" class="admin-login-section">
+      <div class="glass-card login-card">
+        <i data-lucide="lock" class="lock-icon"></i>
+        <h2>Zugriff geschützt</h2>
+        <p>Gib das in `config.js` definierte Passwort ein, um die Antworten deiner Freundin zu sehen.</p>
+        <div class="login-input-row">
+          <input type="password" id="admin-password" placeholder="Passwort eingeben">
+          <button id="login-btn" class="primary-btn">Freigeben</button>
+        </div>
+        <p id="login-error" class="error-text hidden">Falsches Passwort. Bitte versuche es erneut.</p>
+      </div>
+    </section>
+
+    <!-- Daten-Bereich -->
+    <section id="admin-data-box" class="admin-data-section hidden">
+      <div class="data-actions">
+        <button id="refresh-data-btn" class="primary-btn">
+          <i data-lucide="refresh-cw"></i> Aktualisieren
+        </button>
+      </div>
+      <div id="no-data-msg" class="empty-state hidden">
+        <i data-lucide="database-backup"></i>
+        <p>Noch keine Einträge in der Supabase-Datenbank vorhanden.</p>
+      </div>
+      <div class="table-wrapper">
+        <table id="preferences-table">
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Name</th>
+              <th>Lieblingsgerichte</th>
+              <th>Gemüse (Love/Hate)</th>
+              <th>Beilagen</th>
+              <th>Fleisch</th>
+              <th>Länderküchen</th>
+              <th>Umfang / Stil</th>
+              <th>Zusammenfassung</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="preferences-table-body">
+            <!-- Dynamische Zeilen -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
