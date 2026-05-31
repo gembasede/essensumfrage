@@ -15,8 +15,7 @@ let state = {
     custom_feedback: '',
     summary: ''
   },
-  supabase: null,
-  currentSelectedValues: new Set() // Speichert aktuell ausgewählte Chips für den aktiven Schritt
+  supabase: null
 };
 
 // ==========================================================================
@@ -37,7 +36,7 @@ function initSupabase() {
 }
 
 // ==========================================================================
-// CHATBOT FRAGEN-DEFINITIONEN (MASSIV ERWEITERT)
+// CHATBOT FRAGEN-DEFINITIONEN (Übersichtliche Chips)
 // ==========================================================================
 const QUESTIONS = [
   {
@@ -58,12 +57,11 @@ const QUESTIONS = [
       'Burger & Pommes 🍔',
       'Quiche, Tarte & Pizza 🍕',
       'Süße Hauptspeisen (Milchreis/Pancakes) 🥞'
-    ],
-    field: 'favorite_dishes'
+    ]
   },
   {
     // Schritt 1
-    text: `Super, ist notiert! 📝<br><br><strong>Frage 2a: Wie sieht es beim Gemüse aus? Was liebst du total?</strong> (Wähle deine Favoriten aus oder tippe eigene ein und klicke danach auf Weiter)`,
+    text: `Super, ist notiert! 📝<br><br><strong>Frage 2a: Wie sieht es beim Gemüse aus? Was liebst du total?</strong> (Klicke auf die Chips und ergänze im Textfeld, was du möchtest)`,
     type: 'multi-select-next',
     chips: [
       'Tomaten 🍅', 
@@ -84,12 +82,11 @@ const QUESTIONS = [
       'Rote Bete 🍠',
       'Auberginen 🍆',
       'Knoblauch & Zwiebeln 🧄'
-    ],
-    field: 'vegetables_love'
+    ]
   },
   {
     // Schritt 2
-    text: `Alles klar. 🌱<br><br><strong>Frage 2b: Und welches Gemüse sollte ich auf gar keinen Fall auf den Plan setzen? ❌</strong> (Wähle deine No-Gos aus oder tippe eigene ein und klicke danach auf Weiter)`,
+    text: `Alles klar. 🌱<br><br><strong>Frage 2b: Und welches Gemüse sollte ich auf gar keinen Fall auf den Plan setzen? ❌</strong> (Klicke auf die Chips zum Auswählen)`,
     type: 'multi-select-next',
     chips: [
       'Rosenkohl 🥬', 
@@ -105,8 +102,7 @@ const QUESTIONS = [
       'Zucchini 🥒',
       'Kürbis 🎃',
       'Keines / Ich mag alles! 👍'
-    ],
-    field: 'vegetables_hate'
+    ]
   },
   {
     // Schritt 3
@@ -123,12 +119,11 @@ const QUESTIONS = [
       'Quinoa, Hirse & Dinkel 🌾',
       'Polenta 🌽',
       'Brot & Baguette 🥖'
-    ],
-    field: 'carbs_preferences'
+    ]
   },
   {
     // Schritt 4
-    text: `Da wir tendenziell eher weniger Fleisch essen wollen: 🌱<br><br><strong>Frage 4: Wenn es doch mal Fleisch gibt, was ist dir da am liebsten?</strong> (Einfachauswahl oder tippe etwas Eigenes ein)`,
+    text: `Da wir tendenziell eher weniger Fleisch essen wollen: 🌱<br><br><strong>Frage 4: Wenn es doch mal Fleisch gibt, was ist dir da am liebsten?</strong>`,
     type: 'single-select',
     chips: [
       'Eher Geflügel (Hähnchen/Pute) 🍗', 
@@ -155,8 +150,7 @@ const QUESTIONS = [
       'Amerikanisch (Burger/BBQ) 🇺🇸',
       'Spanisch (Tapas) 🇪🇸',
       'Egal, Hauptsache abwechslungsreich! 😋'
-    ],
-    field: 'cuisine_preferences'
+    ]
   },
   {
     // Schritt 6
@@ -169,8 +163,7 @@ const QUESTIONS = [
       'Meal-Prep Ideen (zum Einfrieren) ❄️',
       'Kuchen & Backrezepte 🍰',
       'Getränke & gesunde Smoothies 🍹'
-    ],
-    field: 'meal_types'
+    ]
   },
   {
     // Schritt 7
@@ -208,6 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
     startChatbot();
   }
   
+  // Reaktivität: Wenn der Nutzer manuell im Textfeld tippt, aktualisiere die visuelle Auswahl der Chips
+  chatInput.addEventListener('input', updateChipSelectionVisuals);
+  
   lucide.createIcons();
 });
 
@@ -217,7 +213,6 @@ function startChatbot() {
   setTimeout(() => {
     removeBotTypingIndicator();
     addBotMessage(QUESTIONS[0].text);
-    state.currentSelectedValues.clear();
     renderChips(QUESTIONS[0]);
   }, 1200);
 }
@@ -289,82 +284,102 @@ function renderChips(question) {
   
   if (!question.chips || question.chips.length === 0) return;
   
+  // Setze einen passenden Platzhalter für das Eingabefeld
+  if (question.type === 'single-select') {
+    chatInput.placeholder = "Wähle einen Chip oder tippe hier...";
+  } else {
+    chatInput.placeholder = "Wähle Chips aus oder ergänze hier per Text...";
+  }
+  
   question.chips.forEach(chipText => {
     const chip = document.createElement('button');
     chip.className = 'chip';
     chip.textContent = chipText;
     
-    // Markiere als ausgewählt, wenn im Set vorhanden (z. B. nach dynamischem Freitext-Hinzufügen)
-    if (state.currentSelectedValues.has(chipText)) {
-      chip.classList.add('selected');
-    }
-    
     chip.addEventListener('click', () => {
+      let currentText = chatInput.value.trim();
+      
       if (question.type === 'single-select') {
-        // Einfachauswahl: Sofort absenden
-        addUserMessage(chipText);
-        saveAnswer(question, chipText);
-        nextStep();
+        // Einfachauswahl: Ersetze den gesamten Text im Eingabefeld
+        chatInput.value = chipText;
       } else {
-        // Mehrfachauswahl: Markieren / Entmarkieren im globalen Set
-        if (state.currentSelectedValues.has(chipText)) {
-          state.currentSelectedValues.delete(chipText);
-          chip.classList.remove('selected');
+        // Mehrfachauswahl: Splitten, hinzufügen oder entfernen
+        let parts = currentText ? currentText.split(',').map(p => p.trim()).filter(p => p !== '') : [];
+        const index = parts.indexOf(chipText);
+        
+        if (index > -1) {
+          // Bereits vorhanden: Entfernen
+          parts.splice(index, 1);
         } else {
-          state.currentSelectedValues.add(chipText);
-          chip.classList.add('selected');
+          // Nicht vorhanden: Hinzufügen
+          parts.push(chipText);
         }
+        
+        chatInput.value = parts.join(', ');
       }
+      
+      // Visuelle Auswahl der Chips aktualisieren und Eingabefeld fokussieren
+      updateChipSelectionVisuals();
+      chatInput.focus();
     });
     
     quickRepliesContainer.appendChild(chip);
   });
   
-  // Wenn es eine Mehrfachauswahl ist, brauchen wir einen "Weiter"-Button
-  if (question.type === 'multi-select' || question.type === 'multi-select-next') {
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'chip selected';
-    nextBtn.style.backgroundColor = 'var(--secondary)';
-    nextBtn.style.borderColor = 'var(--secondary)';
-    nextBtn.innerHTML = 'Weiter <i data-lucide="arrow-right" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-left:4px;"></i>';
+  // Update direkt beim Laden des Schritts (falls das Textfeld schon befüllt wäre)
+  updateChipSelectionVisuals();
+}
+
+// Aktualisiert die visuelle Hervorhebung (selected) der Chips basierend auf dem Textfeld-Inhalt
+function updateChipSelectionVisuals() {
+  const text = chatInput.value.trim();
+  const chips = quickRepliesContainer.querySelectorAll('.chip');
+  
+  // Teile den Text an den Kommas auf, um exakte Vergleiche zu ermöglichen
+  const activeParts = text ? text.split(',').map(p => p.trim()) : [];
+  
+  chips.forEach(chip => {
+    const chipText = chip.textContent;
     
-    nextBtn.addEventListener('click', () => {
-      const selectedArray = Array.from(state.currentSelectedValues);
-      if (selectedArray.length === 0) {
-        addUserMessage("Keine Angabe / Weiter");
-        saveAnswer(question, []);
-      } else {
-        // Emojis und das Tipp-Zeichen (✍️) für die finale Anzeige bereinigen
-        const cleanArray = selectedArray.map(item => item.replace(' ✍️', ''));
-        addUserMessage(cleanArray.join(', '));
-        saveAnswer(question, cleanArray);
-      }
-      nextStep();
-    });
+    // Für Einfachauswahl reicht exakter Vergleich, für Mehrfachauswahl die Array-Prüfung
+    const isSelected = activeParts.includes(chipText) || text === chipText;
     
-    quickRepliesContainer.appendChild(nextBtn);
-    lucide.createIcons();
-  }
+    if (isSelected) {
+      chip.classList.add('selected');
+    } else {
+      chip.classList.remove('selected');
+    }
+  });
 }
 
 // Speichert die Antwort im globalen Zustand
 function saveAnswer(question, value) {
+  // Für Mehrfachauswahl speichern wir ein Array (gesplittet nach Komma)
+  const isMulti = question.type === 'multi-select' || question.type === 'multi-select-next';
+  
+  let formattedValue;
+  if (isMulti) {
+    formattedValue = value ? value.split(',').map(p => p.trim()).filter(p => p !== '') : [];
+  } else {
+    formattedValue = value;
+  }
+  
   if (state.currentStep === 0) {
-    state.answers.favorite_dishes = Array.isArray(value) ? value : [value];
+    state.answers.favorite_dishes = formattedValue;
   } else if (state.currentStep === 1) {
-    state.answers.vegetables_love = value;
+    state.answers.vegetables_love = formattedValue;
   } else if (state.currentStep === 2) {
-    state.answers.vegetables_hate = value;
+    state.answers.vegetables_hate = formattedValue;
   } else if (state.currentStep === 3) {
-    state.answers.carbs_preferences = value;
+    state.answers.carbs_preferences = formattedValue;
   } else if (state.currentStep === 4) {
-    state.answers.meat_preference = value;
+    state.answers.meat_preference = formattedValue;
   } else if (state.currentStep === 5) {
-    state.answers.cuisine_preferences = value;
+    state.answers.cuisine_preferences = formattedValue;
   } else if (state.currentStep === 6) {
-    state.answers.meal_types = value;
+    state.answers.meal_types = formattedValue;
   } else if (state.currentStep === 7) {
-    state.answers.snack_style = value;
+    state.answers.snack_style = formattedValue;
   }
 }
 
@@ -375,7 +390,6 @@ function nextStep() {
   // Eingabefeld leeren und Zustand zurücksetzen
   chatInput.value = '';
   quickRepliesContainer.innerHTML = '';
-  state.currentSelectedValues.clear();
   
   if (state.currentStep < QUESTIONS.length) {
     addBotTypingIndicator();
@@ -391,32 +405,17 @@ function nextStep() {
   }
 }
 
-// Freitext absenden über Eingabefeld oder Sende-Button
+// Absenden über Eingabefeld oder Sende-Button (schließt den aktuellen Schritt ab)
 function handleUserInput() {
   const text = chatInput.value.trim();
-  if (!text) return;
-  
   const question = QUESTIONS[state.currentStep];
   
-  if (question.type === 'multi-select' || question.type === 'multi-select-next') {
-    // Mehrfachauswahl: Eigener Freitext wird als ausgewählter Chip hinzugefügt
-    const customChipText = text + " ✍️";
-    
-    if (!question.chips.includes(customChipText)) {
-      question.chips.push(customChipText);
-    }
-    
-    state.currentSelectedValues.add(customChipText);
-    chatInput.value = '';
-    
-    // Chips neu rendern, damit der neue Freitext-Chip sichtbar und ausgewählt ist
-    renderChips(question);
-  } else {
-    // Einfachauswahl: Verhalten wie bisher (direkt weitergehen)
-    addUserMessage(text);
-    saveAnswer(question, text);
-    nextStep();
-  }
+  // Wenn nichts eingetragen ist, werten wir es als "Keine Angabe / Weiter"
+  const displayText = text || "Keine Angabe / Weiter";
+  addUserMessage(displayText);
+  
+  saveAnswer(question, text);
+  nextStep();
 }
 
 sendBtn.addEventListener('click', handleUserInput);
