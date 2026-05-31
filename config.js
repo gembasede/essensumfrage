@@ -2,8 +2,8 @@
 
 const CONFIG = {
   // Trage hier deine Supabase-Verbindungsdaten ein
-  SUPABASE_URL: "DEINE_SUPABASE_URL",
-  SUPABASE_ANON_KEY: "DEIN_SUPABASE_ANON_KEY",
+  SUPABASE_URL: "https://bflewnunhtqnhegjnzci.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_3iaIf-5Sep1iyDf8W3FJWg_jKHgE9dx",
 
   // Passwort für die Admin-Ansicht (wenn du ?admin=true aufrufst)
   ADMIN_PASSWORD: "essen", 
