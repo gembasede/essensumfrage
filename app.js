@@ -1,4 +1,3 @@
-const CONFIG = window.CONFIG;
 
 // Globaler Zustand der App
 let state = {
